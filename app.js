@@ -16,6 +16,21 @@ const pool = new Pool({
   port: process.env.DB_PORT
 })
 
+// API Key Middleware
+const apiKeyAuth = (req, res, next) => {
+  const apiKey = req.headers['x-api-key'] || req.query.api_key
+  
+  if (!apiKey) {
+    return res.status(401).json({ error: 'API-Key missing' })
+  }
+  
+  if (apiKey !== process.env.API_KEY) {
+    return res.status(403).json({ error: 'Invalid API-Key' })
+  }
+  
+  next()
+}
+
 // Create table if not exists
 async function initDB() {
   try {
@@ -36,6 +51,9 @@ async function initDB() {
 app.get('/', (req, res) => {
   res.send('API is running')
 })
+
+// Apply API Key Middleware to all /api routes
+app.use('/api', apiKeyAuth)
 
 // GET all existing entries
 app.get('/api/data', async (req, res) => {
